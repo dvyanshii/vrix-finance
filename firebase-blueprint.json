@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "Stores user profile information and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "description": "Email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "countryCode": { "type": "string", "description": "Phone country code" },
+        "currency": { "type": "string", "description": "Primary currency preference" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["uid", "name", "email"]
+    }
+  },
+  "firestore": {
+    "users/{uid}": {
+      "schema": "users",
+      "description": "User profile document"
+    }
+  }
+}
