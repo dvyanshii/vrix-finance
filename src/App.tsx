@@ -427,11 +427,21 @@ const CalculatorPanel = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
   const handleOperator = (nextOperator: string) => {
     const inputValue = parseFloat(display);
 
+    if (waitingForOperand && operator) {
+      setOperator(nextOperator);
+      return;
+    }
+
     if (prevValue === null) {
       setPrevValue(inputValue);
     } else if (operator) {
       const currentValue = prevValue || 0;
       const newValue = calculate(currentValue, inputValue, operator);
+      
+      // Add intermediate step to history
+      const expression = `${currentValue} ${operator} ${inputValue}`;
+      setHistory(prev => [{ expression, result: String(newValue) }, ...prev].slice(0, 20));
+      
       setPrevValue(newValue);
       setDisplay(String(newValue));
     }
