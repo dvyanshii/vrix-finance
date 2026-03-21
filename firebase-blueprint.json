@@ -11,6 +11,7 @@
         "phone": { "type": "string", "description": "Phone number" },
         "countryCode": { "type": "string", "description": "Phone country code" },
         "currency": { "type": "string", "description": "Primary currency preference" },
+        "loginCount": { "type": "integer", "description": "Total number of logins" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
       },
       "required": ["uid", "name", "email"]

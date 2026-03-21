@@ -24,6 +24,28 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const getErrorMessage = (err: any) => {
+    const code = err.code;
+    switch (code) {
+      case 'auth/popup-closed-by-user':
+        return null; // Don't show error if user closed the popup
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please try again.';
+      case 'auth/email-already-in-use':
+        return 'This email is already registered. Please sign in instead.';
+      case 'auth/weak-password':
+        return 'Password should be at least 6 characters.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection.';
+      case 'auth/too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      default:
+        return err.message || 'An unexpected error occurred. Please try again.';
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError(null);
@@ -47,7 +69,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
       }
       onAuthSuccess();
     } catch (err: any) {
-      setError(err.message);
+      const msg = getErrorMessage(err);
+      if (msg) setError(msg);
     } finally {
       setLoading(false);
     }
@@ -78,7 +101,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
       }
       onAuthSuccess();
     } catch (err: any) {
-      setError(err.message);
+      const msg = getErrorMessage(err);
+      if (msg) setError(msg);
     } finally {
       setLoading(false);
     }
