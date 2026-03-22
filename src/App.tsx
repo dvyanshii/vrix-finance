@@ -43,7 +43,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChatBot } from './components/ChatBot';
-import { Auth } from './components/Auth';
 import { 
   BarChart, 
   Bar, 
@@ -57,7 +56,6 @@ import {
 } from 'recharts';
 import { cn } from './lib/utils';
 import { auth, db } from './firebase';
-import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc, getDocFromServer } from 'firebase/firestore';
 
 // --- Error Handling ---
@@ -333,13 +331,6 @@ const Sidebar = ({ activeScreen, setScreen, onSignOut }: { activeScreen: Screen,
             <span className="font-semibold text-sm tracking-tight">{item.label}</span>
           </button>
         ))}
-        <button 
-          onClick={onSignOut}
-          className="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:text-red-400 transition-all duration-200 group mt-4"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-semibold text-sm tracking-tight">Sign Out</span>
-        </button>
       </div>
     </aside>
   );
@@ -2084,8 +2075,8 @@ const SupportScreen = ({ currencySymbol, onOpenChat }: { currencySymbol: string,
 // --- Main App ---
 
 export default function App() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [user, setUser] = useState<any>({ uid: 'demo-user', email: 'alex.morgan@executive.com' });
+  const [isAuthReady, setIsAuthReady] = useState(true);
   const [screen, setScreen] = useState<Screen>('overview');
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -2105,13 +2096,10 @@ export default function App() {
     currency: 'INR - Indian Rupee'
   });
 
-  // Auth Listener
+  // Auth Listener removed to bypass sign-in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setIsAuthReady(true);
-    });
-    return () => unsubscribe();
+    // Mocking auth readiness
+    setIsAuthReady(true);
   }, []);
 
   // Firestore Sync
@@ -2144,12 +2132,9 @@ export default function App() {
   }, [user, isAuthReady]);
 
   const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      setScreen('overview');
-    } catch (error) {
-      console.error("Sign out error:", error);
-    }
+    // Sign out functionality disabled as auth page is removed
+    console.log("Sign out requested in demo mode");
+    setScreen('overview');
   };
 
   const saveProfile = async (newProfile: Profile) => {
@@ -2205,10 +2190,6 @@ export default function App() {
         <Loader2 className="w-8 h-8 animate-spin text-black" />
       </div>
     );
-  }
-
-  if (!user) {
-    return <Auth onAuthSuccess={() => {}} />;
   }
 
   return (
