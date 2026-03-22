@@ -629,7 +629,10 @@ const OverviewScreen = ({
   selectedYear,
   currencySymbol,
   debts,
-  onUpdateDebts
+  onUpdateDebts,
+  networkBalance,
+  networkReceived,
+  networkSent
 }: { 
   transactions: Transaction[],
   onAddTransaction: (t: Omit<Transaction, 'id' | 'icon'>) => void,
@@ -637,7 +640,10 @@ const OverviewScreen = ({
   selectedYear: string,
   currencySymbol: string,
   debts: Debt[],
-  onUpdateDebts: (debts: Debt[]) => void
+  onUpdateDebts: (debts: Debt[]) => void,
+  networkBalance: number,
+  networkReceived: number,
+  networkSent: number
 }) => {
   const [isAdding, setIsAdding] = useState<'received' | 'sent' | null>(null);
   const [isEditingDebts, setIsEditingDebts] = useState(false);
@@ -647,9 +653,9 @@ const OverviewScreen = ({
   const [newAmount, setNewAmount] = useState('');
   const [newCategory, setNewCategory] = useState('General');
 
-  const received = transactions.filter(t => t.type === 'received').reduce((sum, t) => sum + t.amount, 0);
-  const sent = transactions.filter(t => t.type === 'sent').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-  const totalBalance = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const received = transactions.filter(t => t.type === 'received').reduce((sum, t) => sum + t.amount, 0) + networkReceived;
+  const sent = transactions.filter(t => t.type === 'sent').reduce((sum, t) => sum + Math.abs(t.amount), 0) + networkSent;
+  const totalBalance = transactions.reduce((sum, t) => sum + t.amount, 0) + networkBalance;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1065,10 +1071,12 @@ const OverviewScreen = ({
 
 const AnalyticsScreen = ({ 
   transactions, 
-  currencySymbol 
+  currencySymbol,
+  networkBalance
 }: { 
   transactions: Transaction[], 
-  currencySymbol: string 
+  currencySymbol: string,
+  networkBalance: number
 }) => {
   const chartData = useMemo(() => {
     const weeks = ['W1', 'W2', 'W3', 'W4'];
@@ -1095,7 +1103,7 @@ const AnalyticsScreen = ({
 
   const savingsData = useMemo(() => {
     // Calculate cumulative balance over weeks for the current view
-    let cumulative = 0;
+    let cumulative = networkBalance;
     const weeks = ['W1', 'W2', 'W3', 'W4'];
     return weeks.map((w, index) => {
       const weekTransactions = transactions.filter(t => {
@@ -1112,7 +1120,7 @@ const AnalyticsScreen = ({
     });
   }, [transactions]);
 
-  const totalSavings = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalSavings = transactions.reduce((sum, t) => sum + t.amount, 0) + networkBalance;
 
   return (
     <div className="space-y-12">
@@ -1260,16 +1268,18 @@ const PortfolioScreen = ({
   profile,
   nodes,
   onUpdateNodes,
-  selectedMonth
+  selectedMonth,
+  networkBalance
 }: { 
   transactions: Transaction[], 
   currencySymbol: string,
   profile: Profile,
   nodes: NetworkNode[],
   onUpdateNodes: (nodes: NetworkNode[]) => void,
-  selectedMonth: string
+  selectedMonth: string,
+  networkBalance: number
 }) => {
-  const totalBalance = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalBalance = transactions.reduce((sum, t) => sum + t.amount, 0) + networkBalance;
   const activeNodes = transactions.length > 0 ? Math.ceil(transactions.length / 2) : 0;
   const [isEditing, setIsEditing] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
@@ -2152,6 +2162,25 @@ export default function App() {
 
   const currencySymbol = useMemo(() => CURRENCY_SYMBOLS[profile.currency] || '₹', [profile.currency]);
 
+  const { networkBalance, networkReceived, networkSent } = useMemo(() => {
+    let balance = 0;
+    let received = 0;
+    let sent = 0;
+    nodes.forEach(node => {
+      balance += node.net;
+      received += Number(node.received || 0);
+      sent += Number(node.sent || 0);
+      if (node.children) {
+        node.children.forEach(child => {
+          balance += child.net;
+          received += Number(child.received || 0);
+          sent += Number(child.sent || 0);
+        });
+      }
+    });
+    return { networkBalance: balance, networkReceived: received, networkSent: sent };
+  }, [nodes]);
+
   const currentMonthTransactions = useMemo(() => {
     return transactions.filter(t => {
       const m = t.fullDate.toLocaleDateString('en-US', { month: 'long' });
@@ -2222,9 +2251,12 @@ export default function App() {
                   currencySymbol={currencySymbol}
                   debts={debts}
                   onUpdateDebts={setDebts}
+                  networkBalance={networkBalance}
+                  networkReceived={networkReceived}
+                  networkSent={networkSent}
                 />
               )}
-              {screen === 'analytics' && <AnalyticsScreen transactions={currentMonthTransactions} currencySymbol={currencySymbol} />}
+              {screen === 'analytics' && <AnalyticsScreen transactions={currentMonthTransactions} currencySymbol={currencySymbol} networkBalance={networkBalance} />}
               {screen === 'portfolio' && (
                 <PortfolioScreen 
                   transactions={transactions} 
@@ -2233,6 +2265,7 @@ export default function App() {
                   nodes={nodes}
                   onUpdateNodes={setNodes}
                   selectedMonth={selectedMonth}
+                  networkBalance={networkBalance}
                 />
               )}
               {screen === 'settings' && <SettingsScreen profile={profile} onSaveProfile={saveProfile} />}
