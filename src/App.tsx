@@ -25,6 +25,7 @@ import {
   Info, 
   Calculator, 
   X, 
+  Menu,
   History,
   Trash2,
   ChevronRight, 
@@ -282,7 +283,14 @@ interface Profile {
 
 // --- Components ---
 
-const Sidebar = ({ activeScreen, setScreen, onSignOut }: { activeScreen: Screen, setScreen: (s: Screen) => void, onSignOut: () => void }) => {
+const Sidebar = ({ activeScreen, setScreen, onSignOut, isOpen, setIsOpen, isMobile }: { 
+  activeScreen: Screen, 
+  setScreen: (s: Screen) => void, 
+  onSignOut: () => void,
+  isOpen: boolean,
+  setIsOpen: (o: boolean) => void,
+  isMobile: boolean
+}) => {
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -295,44 +303,78 @@ const Sidebar = ({ activeScreen, setScreen, onSignOut }: { activeScreen: Screen,
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-black text-white p-6 flex flex-col z-50">
-      <div className="mb-12">
-        <h1 className="text-2xl font-extrabold tracking-tighter">Vrix Finance</h1>
-        <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 mt-1 font-semibold">Financial Group</p>
-      </div>
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobile && isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-      <nav className="flex-1 space-y-2">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setScreen(item.id as Screen)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-              activeScreen === item.id ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
-            )}
-          >
-            <item.icon className={cn("w-5 h-5", activeScreen === item.id ? "text-white" : "text-white/50 group-hover:text-white")} />
-            <span className="font-semibold text-sm tracking-tight">{item.label}</span>
+      <motion.aside 
+        initial={false}
+        animate={{ x: (isMobile && !isOpen) ? '-100%' : 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className={cn(
+          "fixed left-0 top-0 h-screen w-64 bg-black text-white p-6 flex flex-col z-[70] lg:translate-x-0",
+          isMobile && !isOpen && "hidden"
+        )}
+      >
+        <div className="flex justify-between items-center mb-12">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tighter text-white">Vrix Finance</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 mt-1 font-semibold">Financial Group</p>
+          </div>
+          <button onClick={() => setIsOpen(false)} className="lg:hidden p-2 hover:bg-white/10 rounded-full transition-colors">
+            <X className="w-5 h-5 text-white" />
           </button>
-        ))}
-      </nav>
+        </div>
 
-      <div className="space-y-2 pt-6 border-t border-white/10">
-        {bottomItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setScreen(item.id as Screen)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-              activeScreen === item.id ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
-            )}
-          >
-            <item.icon className={cn("w-5 h-5", activeScreen === item.id ? "text-white" : "text-white/50 group-hover:text-white")} />
-            <span className="font-semibold text-sm tracking-tight">{item.label}</span>
-          </button>
-        ))}
-      </div>
-    </aside>
+        <nav className="flex-1 space-y-2">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setScreen(item.id as Screen);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                activeScreen === item.id ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <item.icon className={cn("w-5 h-5", activeScreen === item.id ? "text-white" : "text-white/50 group-hover:text-white")} />
+              <span className="font-semibold text-sm tracking-tight">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="space-y-2 pt-6 border-t border-white/10">
+          {bottomItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setScreen(item.id as Screen);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                activeScreen === item.id ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <item.icon className={cn("w-5 h-5", activeScreen === item.id ? "text-white" : "text-white/50 group-hover:text-white")} />
+              <span className="font-semibold text-sm tracking-tight">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </motion.aside>
+    </>
   );
 };
 
@@ -342,20 +384,28 @@ const TopBar = ({
   setSelectedMonth, 
   selectedYear, 
   setSelectedYear,
-  profile 
+  profile,
+  onMenuClick
 }: { 
   title: string,
   selectedMonth: string,
   setSelectedMonth: (m: string) => void,
   selectedYear: string,
   setSelectedYear: (y: string) => void,
-  profile: Profile
+  profile: Profile,
+  onMenuClick: () => void
 }) => {
   return (
-    <header className="fixed top-0 right-0 left-64 h-20 flex items-center justify-between px-10 bg-surface z-40">
-      <div className="flex items-center gap-6">
-        <h2 className="text-xl font-bold font-headline">{title}</h2>
-        <div className="flex items-center gap-2">
+    <header className="fixed top-0 right-0 left-0 lg:left-64 h-20 flex items-center justify-between px-4 md:px-10 bg-surface z-40 border-b border-outline-variant/5">
+      <div className="flex items-center gap-4 md:gap-6">
+        <button 
+          onClick={onMenuClick}
+          className="lg:hidden p-2 hover:bg-surface-container-low rounded-xl transition-colors"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <h2 className="text-lg md:text-xl font-bold font-headline truncate max-w-[160px] md:max-w-none">{title}</h2>
+        <div className="hidden sm:flex items-center gap-2">
           <div className="relative inline-block">
             <select 
               value={selectedMonth}
@@ -379,19 +429,19 @@ const TopBar = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="relative">
+      <div className="flex items-center gap-2 md:gap-6">
+        <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
           <input 
             type="text" 
             placeholder="Search..." 
-            className="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm w-64 focus:ring-1 focus:ring-black/10 transition-all"
+            className="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm w-48 lg:w-64 focus:ring-1 focus:ring-black/10 transition-all"
           />
         </div>
         <button className="p-2 rounded-full text-on-surface-variant hover:text-black hover:bg-surface-container-low transition-all">
           <Bell className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-3 bg-surface-container-low rounded-full pl-1 pr-4 py-1 cursor-pointer hover:bg-surface-container-high transition-all">
+        <div className="flex items-center gap-3 bg-surface-container-low rounded-full pl-1 pr-1 md:pr-4 py-1 cursor-pointer hover:bg-surface-container-high transition-all">
           <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden ring-1 ring-gray-300">
             <img 
               src={`https://picsum.photos/seed/${profile.name.split(' ')[0].toLowerCase()}/100/100`} 
@@ -400,7 +450,7 @@ const TopBar = ({
               referrerPolicy="no-referrer"
             />
           </div>
-          <span className="text-sm font-bold">{profile.name}</span>
+          <span className="text-sm font-bold hidden sm:inline">{profile.name}</span>
         </div>
       </div>
     </header>
@@ -719,21 +769,21 @@ const OverviewScreen = ({
   return (
     <div className="space-y-8">
       {/* Portfolio Hero */}
-      <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-neutral-900 to-neutral-800 p-12 text-white">
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-end gap-10">
+      <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-neutral-900 to-neutral-800 p-6 md:p-12 text-white">
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
           <div className="space-y-4">
             <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-white/50">Total Balance Value</span>
-            <h2 className="text-6xl font-extrabold tracking-tight leading-none">{currencySymbol} {totalBalance.toLocaleString()}</h2>
+            <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-none">{currencySymbol} {totalBalance.toLocaleString()}</h2>
             <div className="flex items-center gap-2 text-white/70 font-semibold text-sm">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               <span>Calculated from all activities</span>
             </div>
           </div>
-          <div className="flex gap-4">
-            <button className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full font-bold text-sm transition-all">
+          <div className="flex flex-wrap gap-4">
+            <button className="flex-1 sm:flex-none px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full font-bold text-sm transition-all">
               Download Report
             </button>
-            <button className="px-8 py-3 bg-white text-black hover:bg-gray-100 rounded-full font-bold text-sm transition-all shadow-xl shadow-black/20">
+            <button className="flex-1 sm:flex-none px-8 py-3 bg-white text-black hover:bg-gray-100 rounded-full font-bold text-sm transition-all shadow-xl shadow-black/20">
               Invest More
             </button>
           </div>
@@ -741,37 +791,37 @@ const OverviewScreen = ({
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
       </section>
 
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 lg:col-span-8 space-y-8">
-          <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-12 gap-6 md:gap-8">
+        <div className="col-span-12 lg:col-span-8 space-y-6 md:space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
             {/* Money Received */}
             <div 
               onClick={() => setIsAdding('received')}
-              className="bg-white p-8 rounded-[2rem] border border-outline-variant/30 hover:shadow-md transition-shadow group cursor-pointer"
+              className="bg-white p-6 md:p-8 rounded-[2rem] border border-outline-variant/30 hover:shadow-md transition-shadow group cursor-pointer"
             >
               <div className="flex justify-between items-start">
-                <div className="w-12 h-12 bg-surface-container-low rounded-2xl flex items-center justify-center">
-                  <ArrowDownLeft className="w-6 h-6 text-black" />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-low rounded-2xl flex items-center justify-center">
+                  <ArrowDownLeft className="w-5 h-5 md:w-6 md:h-6 text-black" />
                 </div>
               </div>
-              <div className="mt-8 space-y-1">
+              <div className="mt-6 md:mt-8 space-y-1">
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Money Received</span>
-                <div className="text-3xl font-extrabold">{currencySymbol} {received.toLocaleString()}</div>
+                <div className="text-2xl md:text-3xl font-extrabold">{currencySymbol} {received.toLocaleString()}</div>
               </div>
             </div>
             {/* Money Sent */}
             <div 
               onClick={() => setIsAdding('sent')}
-              className="bg-white p-8 rounded-[2rem] border border-outline-variant/30 hover:shadow-md transition-shadow group cursor-pointer"
+              className="bg-white p-6 md:p-8 rounded-[2rem] border border-outline-variant/30 hover:shadow-md transition-shadow group cursor-pointer"
             >
               <div className="flex justify-between items-start">
-                <div className="w-12 h-12 bg-surface-container-low rounded-2xl flex items-center justify-center">
-                  <ArrowUpRight className="w-6 h-6 text-black" />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-low rounded-2xl flex items-center justify-center">
+                  <ArrowUpRight className="w-5 h-5 md:w-6 md:h-6 text-black" />
                 </div>
               </div>
-              <div className="mt-8 space-y-1">
+              <div className="mt-6 md:mt-8 space-y-1">
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Money Sent</span>
-                <div className="text-3xl font-extrabold">{currencySymbol} {sent.toLocaleString()}</div>
+                <div className="text-2xl md:text-3xl font-extrabold">{currencySymbol} {sent.toLocaleString()}</div>
               </div>
             </div>
           </div>
@@ -850,8 +900,8 @@ const OverviewScreen = ({
           </AnimatePresence>
 
           {/* Recent Transactions */}
-          <div className="bg-white p-8 rounded-[2rem] border border-outline-variant/30">
-            <div className="flex justify-between items-center mb-8">
+          <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-outline-variant/30">
+            <div className="flex justify-between items-center mb-6 md:mb-8">
               <h3 className="text-lg font-bold tracking-tight">Recent Activities</h3>
               <button className="text-[10px] font-bold uppercase tracking-widest hover:underline text-on-surface-variant">View All</button>
             </div>
@@ -889,8 +939,8 @@ const OverviewScreen = ({
         </div>
 
         {/* Debts Sidebar */}
-        <div className="col-span-12 lg:col-span-4 bg-surface-container-low/50 p-8 rounded-[2rem] flex flex-col border border-outline-variant/20">
-          <div className="flex justify-between items-center mb-10">
+        <div className="col-span-12 lg:col-span-4 bg-surface-container-low/50 p-6 md:p-8 rounded-[2rem] flex flex-col border border-outline-variant/20">
+          <div className="flex justify-between items-center mb-8 md:mb-10">
             <h3 className="text-lg font-bold tracking-tight">Who Owes Who</h3>
             <button 
               onClick={() => {
@@ -902,10 +952,10 @@ const OverviewScreen = ({
               <Settings className="w-5 h-5 text-on-surface-variant" />
             </button>
           </div>
-          <div className="space-y-8 flex-1">
+          <div className="space-y-6 md:space-y-8 flex-1">
             {debts.map((d) => (
               <div key={d.id} className="flex items-center gap-4">
-                <div className={cn("h-11 w-11 rounded-full flex items-center justify-center text-[10px] font-bold", d.color)}>
+                <div className={cn("h-10 w-10 md:h-11 md:w-11 rounded-full flex items-center justify-center text-[10px] font-bold", d.color)}>
                   {d.initials}
                 </div>
                 <div className="flex-1">
@@ -920,7 +970,7 @@ const OverviewScreen = ({
           </div>
           <button 
             onClick={() => setIsSettling(true)}
-            className="w-full mt-10 py-4 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-black/10"
+            className="w-full mt-8 md:mt-10 py-4 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-black/10"
           >
             Settle All Debts
           </button>
@@ -1123,11 +1173,11 @@ const AnalyticsScreen = ({
   const totalSavings = transactions.reduce((sum, t) => sum + t.amount, 0) + networkBalance;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 md:space-y-12">
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="max-w-2xl">
-          <h2 className="text-5xl font-extrabold tracking-tight mb-4">Financial Performance</h2>
-          <p className="text-on-surface-variant text-lg max-w-lg">
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">Financial Performance</h2>
+          <p className="text-on-surface-variant text-base md:text-lg max-w-lg">
             {transactions.length > 0 
               ? "Analytics are generated in real-time based on your transaction activities."
               : "Add transactions in the Dashboard to see your financial performance analytics."}
@@ -1135,10 +1185,10 @@ const AnalyticsScreen = ({
         </div>
       </section>
 
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-12 gap-6 md:gap-8">
         {/* Cash Flow Chart */}
-        <div className="col-span-12 lg:col-span-8 bg-white rounded-[2rem] p-8 border border-outline-variant/30 shadow-sm">
-          <div className="flex justify-between items-center mb-10">
+        <div className="col-span-12 lg:col-span-8 bg-white rounded-[2rem] p-6 md:p-8 border border-outline-variant/30 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
             <div>
               <h3 className="text-xl font-bold mb-1">Cash Flow Dynamics</h3>
               <p className="text-sm text-on-surface-variant">Weekly breakdown of your activities</p>
@@ -1396,11 +1446,11 @@ const PortfolioScreen = ({
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 md:space-y-12">
       <section className="space-y-2">
         <p className="uppercase text-[10px] tracking-[0.3em] text-on-surface-variant font-extrabold">Network Hierarchy</p>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <h2 className="text-5xl font-extrabold tracking-tight">Network Distribution</h2>
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">Network Distribution</h2>
           <div className="flex items-center gap-3">
             <button 
               onClick={() => {
@@ -1620,62 +1670,62 @@ const PortfolioScreen = ({
         )}
       </AnimatePresence>
 
-      <div className="flex gap-4">
-        <div className="bg-white border border-outline-variant/30 px-8 py-6 rounded-2xl flex flex-col min-w-[200px] shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="bg-white border border-outline-variant/30 px-8 py-6 rounded-2xl flex flex-col sm:min-w-[200px] shadow-sm">
           <span className="uppercase tracking-widest text-on-surface-variant text-[9px] font-bold mb-1">Total Balance Value</span>
-          <span className="text-3xl font-extrabold tracking-tighter">{currencySymbol} {totalBalance.toLocaleString()}</span>
+          <span className="text-2xl md:text-3xl font-extrabold tracking-tighter">{currencySymbol} {totalBalance.toLocaleString()}</span>
         </div>
-        <div className="bg-white border border-outline-variant/30 px-8 py-6 rounded-2xl flex flex-col min-w-[200px] shadow-sm">
+        <div className="bg-white border border-outline-variant/30 px-8 py-6 rounded-2xl flex flex-col sm:min-w-[200px] shadow-sm">
           <span className="uppercase tracking-widest text-on-surface-variant text-[9px] font-bold mb-1">Active Nodes</span>
-          <span className="text-3xl font-extrabold tracking-tighter">{activeNodes}</span>
+          <span className="text-2xl md:text-3xl font-extrabold tracking-tighter">{activeNodes}</span>
         </div>
       </div>
 
       <div className="space-y-6">
         {/* Master Node */}
-        <div className="bg-black text-white p-6 rounded-2xl flex items-center justify-between shadow-2xl">
-          <div className="flex items-center gap-6">
-            <div className="w-14 h-14 rounded-full border border-white/20 bg-white/5 flex items-center justify-center font-bold text-lg">{userInitials}</div>
+        <div className="bg-black text-white p-5 md:p-6 rounded-2xl flex items-center justify-between shadow-2xl">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-white/20 bg-white/5 flex items-center justify-center font-bold text-base md:text-lg">{userInitials}</div>
             <div>
-              <h3 className="font-bold text-xl tracking-tight">{profile.name} (You)</h3>
+              <h3 className="font-bold text-lg md:text-xl tracking-tight">{profile.name} (You)</h3>
               <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Master Portfolio Holder</span>
             </div>
           </div>
-          <div className="flex items-center gap-12">
+          <div className="flex items-center gap-6 md:gap-12">
             <div className="text-right hidden sm:block">
               <p className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1">Net Balance</p>
-              <p className="text-2xl font-extrabold tracking-tighter">{currencySymbol} {totalBalance.toLocaleString()}</p>
+              <p className="text-xl md:text-2xl font-extrabold tracking-tighter">{currencySymbol} {totalBalance.toLocaleString()}</p>
             </div>
-            <ChevronDown className="w-6 h-6 text-white/30" />
+            <ChevronDown className="w-5 h-5 md:w-6 md:h-6 text-white/30" />
           </div>
         </div>
 
         {/* Network Tree */}
-        <div className="ml-14 space-y-6 relative">
-          <div className="absolute left-[-28px] top-0 bottom-0 w-px bg-outline-variant/30" />
+        <div className="ml-4 sm:ml-14 space-y-6 relative">
+          <div className="absolute left-[-16px] sm:left-[-28px] top-0 bottom-0 w-px bg-outline-variant/30" />
           
           {nodes.map((node) => (
             <div key={node.id} className="relative">
-              <div className="absolute left-[-28px] top-8 w-7 h-px bg-outline-variant/30" />
+              <div className="absolute left-[-16px] sm:left-[-28px] top-8 w-4 sm:w-7 h-px bg-outline-variant/30" />
               <div 
                 onClick={() => node.children && node.children.length > 0 && toggleNodeExpansion(node.id)}
                 className={cn(
-                  "bg-white border border-outline-variant/30 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all cursor-pointer",
+                  "bg-white border border-outline-variant/30 p-5 md:p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all cursor-pointer",
                   node.faded ? "opacity-60 grayscale" : "hover:border-black/20",
                   node.active && "border-l-4 border-l-black",
                   expandedNodes.includes(node.id) && "border-black/20 shadow-md"
                 )}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center font-bold border border-outline-variant/30">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface-container-low flex items-center justify-center font-bold border border-outline-variant/30 text-sm md:text-base">
                     {node.initials}
                   </div>
                   <div>
-                    <h4 className="font-bold text-black tracking-tight">{node.name}</h4>
+                    <h4 className="font-bold text-black tracking-tight text-sm md:text-base">{node.name}</h4>
                     <div className="flex items-center gap-2">
-                      <span className="uppercase text-[9px] tracking-[0.2em] font-bold text-on-surface-variant">{node.tier}</span>
+                      <span className="uppercase text-[8px] md:text-[9px] tracking-[0.2em] font-bold text-on-surface-variant">{node.tier}</span>
                       {node.timestamp && (
-                        <span className="text-[8px] font-bold text-black/30 bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-widest">
+                        <span className="text-[7px] md:text-[8px] font-bold text-black/30 bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-widest">
                           {node.timestamp}
                         </span>
                       )}
@@ -1685,22 +1735,22 @@ const PortfolioScreen = ({
                     <ChevronDown className={cn("w-4 h-4 text-on-surface-variant transition-transform duration-300", expandedNodes.includes(node.id) && "rotate-180")} />
                   )}
                 </div>
-                <div className="flex gap-10 items-center">
+                <div className="flex flex-wrap sm:flex-nowrap gap-6 md:gap-10 items-center">
                   {node.received && (
-                    <div className="text-right">
-                      <p className="text-[9px] uppercase text-on-surface-variant font-bold tracking-widest mb-0.5">Received</p>
-                      <p className="text-sm font-bold">{currencySymbol}{node.received}</p>
+                    <div className="text-left md:text-right">
+                      <p className="text-[8px] md:text-[9px] uppercase text-on-surface-variant font-bold tracking-widest mb-0.5">Received</p>
+                      <p className="text-xs md:text-sm font-bold">{currencySymbol}{node.received}</p>
                     </div>
                   )}
                   {node.sent && (
-                    <div className="text-right">
-                      <p className="text-[9px] uppercase text-on-surface-variant font-bold tracking-widest mb-0.5">Sent</p>
-                      <p className="text-sm font-bold">{currencySymbol}{node.sent}</p>
+                    <div className="text-left md:text-right">
+                      <p className="text-[8px] md:text-[9px] uppercase text-on-surface-variant font-bold tracking-widest mb-0.5">Sent</p>
+                      <p className="text-xs md:text-sm font-bold">{currencySymbol}{node.sent}</p>
                     </div>
                   )}
-                  <div className={cn("px-4 py-2 rounded-xl min-w-[120px]", node.faded ? "bg-surface-container-low" : "bg-black text-white")}>
-                    <p className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50 mb-0.5">Net Position</p>
-                    <p className="text-sm font-extrabold tracking-tight">
+                  <div className={cn("px-4 py-2 rounded-xl min-w-[100px] md:min-w-[120px]", node.faded ? "bg-surface-container-low" : "bg-black text-white")}>
+                    <p className="text-[7px] md:text-[8px] uppercase font-bold tracking-[0.2em] opacity-50 mb-0.5">Net Position</p>
+                    <p className="text-xs md:text-sm font-extrabold tracking-tight">
                       {node.net > 0 ? '+' : ''}{currencySymbol}{node.net.toLocaleString()}
                     </p>
                   </div>
@@ -2090,6 +2140,15 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('overview');
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Default to current month and year from runtime context
   const [selectedMonth, setSelectedMonth] = useState('March');
@@ -2224,7 +2283,14 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-surface selection:bg-black selection:text-white">
-        <Sidebar activeScreen={screen} setScreen={setScreen} onSignOut={handleSignOut} />
+        <Sidebar 
+          activeScreen={screen} 
+          setScreen={setScreen} 
+          onSignOut={handleSignOut} 
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+          isMobile={isMobile}
+        />
         <TopBar 
           title={screenTitle} 
           selectedMonth={selectedMonth}
@@ -2232,10 +2298,11 @@ export default function App() {
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
           profile={profile}
+          onMenuClick={() => setIsSidebarOpen(true)}
         />
 
-        <main className="pl-64 pt-20">
-          <div className="max-w-7xl mx-auto px-10 py-12">
+        <main className="lg:pl-64 pt-20">
+          <div className="max-w-7xl mx-auto px-4 md:px-10 py-8 md:py-12">
             <motion.div
               key={screen}
               initial={{ opacity: 0, y: 20 }}
@@ -2279,12 +2346,12 @@ export default function App() {
           </div>
 
           {/* Footer */}
-          <footer className="px-10 py-16 border-t border-outline-variant/10 flex justify-between items-center opacity-30 select-none">
+          <footer className="px-4 md:px-10 py-12 md:py-16 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-8 opacity-30 select-none">
             <div className="flex items-center gap-3">
               <span className="font-extrabold text-2xl tracking-tighter">Vrix Finance</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest">© 2023 Wealth Management Systems</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-center md:text-left">© 2023 Wealth Management Systems</span>
             </div>
-            <div className="flex gap-8 text-[10px] font-bold uppercase tracking-[0.2em]">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-[10px] font-bold uppercase tracking-[0.2em]">
               <span>London</span>
               <span>New York</span>
               <span>Singapore</span>

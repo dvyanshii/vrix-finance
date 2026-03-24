@@ -92,7 +92,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, setIsOpen }) => {
               scale: 1, 
               y: 0,
               height: isMinimized ? '64px' : '500px',
-              width: '380px'
+              width: window.innerWidth < 640 ? 'calc(100vw - 48px)' : '380px'
             }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="bg-white rounded-[2rem] shadow-2xl border border-outline-variant/30 flex flex-col overflow-hidden mb-4"
